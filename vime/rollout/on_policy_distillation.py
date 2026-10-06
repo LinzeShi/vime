@@ -139,7 +139,7 @@ def _per_position_logprobs(reward: dict, response_length: int) -> torch.Tensor:
         if not raw.startswith(b"\x93NUMPY"):
             raise ValueError("expected a NumPy array")
         scores = np.load(io.BytesIO(raw), allow_pickle=False)
-    except (binascii.Error, ValueError, EOFError) as exc:
+    except (binascii.Error, ValueError, EOFError, OSError) as exc:
         raise ValueError("teacher prompt_token_id_logprobs must be a base64-encoded NumPy array") from exc
     if scores.dtype != np.float32 or scores.shape != (response_length, 1):
         raise ValueError(

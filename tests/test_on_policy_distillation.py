@@ -121,6 +121,21 @@ def test_missing_or_malformed_candidate_scores_do_not_fall_back(reward):
     assert sample.teacher_log_probs is None
 
 
+def test_candidate_array_read_error_has_teacher_context(monkeypatch):
+    reward = {"prompt_token_id_logprobs": _encoded(np.array([[-2.0], [-3.0]], dtype=np.float32))}
+    sample = Sample(tokens=[10, 20, 30, 40], response_length=2, reward=reward)
+    read_error = OSError("array read failed")
+
+    def fail_load(*args, **kwargs):
+        raise read_error
+
+    monkeypatch.setattr(opd.np, "load", fail_load)
+    with pytest.raises(ValueError, match="teacher prompt_token_id_logprobs") as exc:
+        opd.post_process_rewards(_args(opd_teacher_scoring="per-position"), [sample])
+    assert exc.value.__cause__ is read_error
+    assert sample.teacher_log_probs is None
+
+
 @pytest.mark.parametrize(
     "scores",
     [
